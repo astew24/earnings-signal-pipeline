@@ -35,6 +35,8 @@ load_dotenv()
 FINBERT_MODEL = os.getenv("FINBERT_MODEL", "ProsusAI/finbert")
 SPACY_MODEL = os.getenv("SPACY_MODEL", "en_core_web_sm")
 DEVICE = int(os.getenv("DEVICE", "-1"))   # -1 = CPU, 0 = first GPU
+# batch sizes above 32 can OOM on CPU with finbert — 16 is a safe default
+DEFAULT_BATCH_SIZE = 16
 
 
 # ---------------------------------------------------------------------------
