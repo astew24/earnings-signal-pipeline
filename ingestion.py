@@ -38,6 +38,8 @@ EDGAR_USER_AGENT = os.getenv(
     "earnings-signal-pipeline research@example.com",
 )
 
+# SEC fair-use rate limit: 10 requests/second. We sleep 0.12s between calls to stay under.
+EDGAR_RATE_LIMIT_SLEEP = 0.12
 EDGAR_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
 EDGAR_COMPANY_SEARCH_URL = "https://efts.sec.gov/LATEST/search-index?q=%22{ticker}%22&dateRange=custom&startdt={start}&enddt={end}&forms=8-K"
 EDGAR_SEARCH_URL = "https://efts.sec.gov/LATEST/search-index"
