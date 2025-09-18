@@ -115,9 +115,10 @@ def _is_management_voice(span) -> bool:
 # ---------------------------------------------------------------------------
 
 def score_sentences(sentences: list[str]) -> list[dict]:
-    """
-    Score a list of sentences with FinBERT.
-    Returns list of {positive_score, negative_score, neutral_score}.
+    """Score sentences with FinBERT. Returns dicts with positive/negative/neutral scores.
+
+    Note: FinBERT returns probabilities summing to ~1.0 per sentence. net_tone
+    downstream is computed as positive_score - negative_score so it's in [-1, 1].
     """
     if not sentences:
         return []
