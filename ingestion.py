@@ -49,6 +49,8 @@ EDGAR_FULLTEXT    = "https://efts.sec.gov/LATEST/search-index"
 POLYGON_AGG_URL = (
     "https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/minute/{from_date}/{to_date}"
 )
+# Polygon free tier has a 5 req/min rate limit — paid tier goes up to 100/min
+POLYGON_RATE_LIMIT_SLEEP = 0.5
 
 RATE_LIMIT_DELAY = 0.12   # SEC fair-use: ≤10 req/s
 
