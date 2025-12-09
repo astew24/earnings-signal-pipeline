@@ -95,9 +95,10 @@ def refine_sentences_spacy(raw_sentences: list[str]) -> list[str]:
 
 
 def _is_management_voice(span) -> bool:
-    """
-    Heuristic filter: keep sentences that are likely forward-looking
-    or results-discussion oriented (first-person plural or financial keywords).
+    """Heuristic: keep sentences that look like management commentary.
+
+    Forward-looking language and financial keywords are the signal.
+    False positive rate is acceptable — FinBERT scoring handles noise downstream.
     """
     import spacy  # type: ignore
 
