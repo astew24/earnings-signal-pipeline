@@ -41,9 +41,10 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 def run_ols(ticker: Optional[str] = None, min_events: int = 5) -> list[dict]:
-    """
-    Pull tone + return data from DB and run OLS per ticker.
-    Returns list of regression result dicts.
+    """Pull tone + return data from DB and run per-ticker OLS regression.
+
+    min_events filters tickers with too few data points to get stable estimates.
+    Returns list of result dicts — one per ticker.
     """
     if not HAS_DEPS:
         return []
