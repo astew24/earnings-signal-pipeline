@@ -100,10 +100,12 @@ def run_ols(ticker: Optional[str] = None, min_events: int = 5) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def build_plotly_report(results: list[dict], rows: list[dict]) -> go.Figure:
-    """
-    Build a multi-panel Plotly HTML report:
-      Panel 1: Scatter (tone vs return) per ticker
-      Panel 2: Bar chart of β coefficients with significance bands
+    """Build a multi-panel Plotly HTML report.
+
+    Panel 1: tone vs return scatter per ticker
+    Panel 2: β coefficient bar chart with significance bands
+
+    Returns an empty figure if results is empty or plotly isn't installed.
     """
     if not HAS_DEPS or not results:
         return go.Figure()
