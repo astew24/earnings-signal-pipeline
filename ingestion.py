@@ -198,6 +198,10 @@ def fetch_filing_text(filing_url: str) -> Optional[str]:
     time.sleep(RATE_LIMIT_DELAY)
     try:
         r = requests.get(filing_url, headers=_headers(), timeout=45)
+        # SEC fair-use policy: max 10 req/s — back off on 429
+        if r.status_code == 429:
+            time.sleep(10)
+            r = requests.get(filing_url, headers=_headers(), timeout=45)
         if r.status_code == 200:
             return r.text
         print(f"[edgar] Filing fetch HTTP {r.status_code}: {filing_url}")
