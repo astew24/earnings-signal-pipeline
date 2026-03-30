@@ -76,7 +76,11 @@ def refine_sentences_spacy(raw_sentences: list[str]) -> list[str]:
     Re-segment raw sentences through spaCy for accurate boundaries
     and filter to high-signal management commentary sentences.
     """
-    nlp = _get_spacy()
+    try:
+        nlp = _get_spacy()
+    except OSError:
+        print(f"[spacy] Model '{SPACY_MODEL}' not downloaded — returning raw sentences unchanged")
+        return raw_sentences
 
     refined: list[str] = []
     for text in raw_sentences:
