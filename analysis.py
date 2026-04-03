@@ -154,6 +154,8 @@ def build_plotly_report(results: list[dict], rows: list[dict]) -> go.Figure:
     )
 
     # --- Beta bar chart ---
+    # Filter NaN betas — can occur with single-observation tickers
+    results = [r for r in results if r['beta'] is not None and not (r['beta'] != r['beta'])]
     beta_fig = go.Figure()
     colors = [
         "#22C55E" if r["p_value"] < 0.05 else "#94A3B8"
