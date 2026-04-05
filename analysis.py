@@ -83,6 +83,9 @@ def run_ols(ticker: Optional[str] = None, min_events: int = 5) -> list[dict]:
         db.upsert_signal_result(result)
 
         sig = "***" if p_value < 0.01 else "**" if p_value < 0.05 else "*" if p_value < 0.10 else ""
+        # Low R² is expected here — tone explains a tiny slice of daily return variance.
+        # The point is whether β is consistently signed and whether p-value survives
+        # multiple testing correction across tickers.
         print(
             f"  {tkr}: β={slope:.4f} α={intercept:.4f} "
             f"R²={r_value**2:.3f} p={p_value:.3f}{sig} n={len(group)}"
