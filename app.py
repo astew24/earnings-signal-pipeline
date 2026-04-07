@@ -115,17 +115,25 @@ def _get_signal_results() -> list[dict]:
             return [dict(r) for r in cur.fetchall()]
 
 
-def _get_tone_series(ticker: str) -> list[dict]:
-    sql = """
+def _get_tone_series(ticker: str, from_date=None, to_date=None) -> list[dict]:
+    params: list = [ticker]
+    date_clauses = ""
+    if from_date:
+        date_clauses += " AND filed_at >= %s"
+        params.append(from_date)
+    if to_date:
+        date_clauses += " AND filed_at <= %s"
+        params.append(to_date)
+    sql = f"""
     SELECT filed_at, AVG(net_tone) as avg_tone, COUNT(*) as n_sentences
     FROM tone_scores
-    WHERE ticker = %s
+    WHERE ticker = %s{date_clauses}
     GROUP BY filed_at
     ORDER BY filed_at
     """
     with db.get_conn() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, (ticker,))
+            cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
 
 
@@ -222,7 +230,9 @@ def results_json():
 
 @app.route("/api/tone/<ticker>")
 def tone_series(ticker: str):
-    series = _get_tone_series(ticker.upper())
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
+    series = _get_tone_series(ticker.upper(), from_date=from_date, to_date=to_date)
     for r in series:
         r["filed_at"] = str(r["filed_at"])
     return jsonify(series)
