@@ -19,7 +19,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-from datetime import date
 from typing import Optional
 
 import db
@@ -155,7 +154,7 @@ def build_plotly_report(results: list[dict], rows: list[dict]) -> go.Figure:
 
     # --- Beta bar chart ---
     # Filter NaN betas — can occur with single-observation tickers
-    results = [r for r in results if r['beta'] is not None and not (r['beta'] != r['beta'])]
+    results = [r for r in results if r['beta'] is not None and not pd.isna(r['beta'])]
     beta_fig = go.Figure()
     colors = [
         "#22C55E" if r["p_value"] < 0.05 else "#94A3B8"
