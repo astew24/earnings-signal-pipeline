@@ -40,7 +40,7 @@ except ImportError:
 # OLS regression
 # ---------------------------------------------------------------------------
 
-def run_ols(ticker: Optional[str] = None) -> list[dict]:
+def run_ols(ticker: Optional[str] = None, min_events: int = 5) -> list[dict]:
     """
     Pull tone + return data from DB and run OLS per ticker.
     Returns list of regression result dicts.
@@ -60,8 +60,8 @@ def run_ols(ticker: Optional[str] = None) -> list[dict]:
 
     results = []
     for tkr, group in df.groupby("ticker"):
-        if len(group) < 5:
-            print(f"[analysis] {tkr}: only {len(group)} events — skipping (need ≥5)")
+        if len(group) < min_events:
+            print(f"[analysis] {tkr}: only {len(group)} events — skipping (need ≥{min_events})")
             continue
 
         x = group["avg_net_tone"].values
@@ -209,10 +209,12 @@ def main():
     parser.add_argument("--ticker", default=None)
     parser.add_argument("--output", default="analysis_report.html",
                         help="Output HTML file for Plotly charts")
+    parser.add_argument("--min-events", type=int, default=5,
+                        help="Minimum number of filing events required per ticker to run OLS (default: 5)")
     args = parser.parse_args()
 
     print("\n[analysis] Running OLS regression …")
-    results = run_ols(ticker=args.ticker)
+    results = run_ols(ticker=args.ticker, min_events=args.min_events)
 
     if results and HAS_DEPS:
         rows = db.get_tone_and_returns(ticker=args.ticker)
