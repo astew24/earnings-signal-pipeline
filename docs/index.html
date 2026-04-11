@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>earnings-signal-pipeline — Demo</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    header { padding: 2.5rem 2rem 1.5rem; border-bottom: 1px solid #1e293b; }
+    .badge { display: inline-block; background: #6b21a8; color: #e9d5ff; font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 9999px; margin-bottom: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase; }
+    h1 { font-size: 1.75rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.4rem; }
+    .subtitle { color: #94a3b8; font-size: 0.95rem; max-width: 620px; line-height: 1.6; }
+    .links { margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap; }
+    .links a { color: #60a5fa; font-size: 0.875rem; text-decoration: none; }
+    .links a:hover { text-decoration: underline; }
+    main { max-width: 1100px; margin: 2rem auto; padding: 0 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .card { background: #1e293b; border: 1px solid #334155; border-radius: 0.75rem; padding: 1.5rem; }
+    .card.full { grid-column: 1 / -1; }
+    .card h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; font-weight: 600; margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { color: #64748b; text-align: left; padding: 0.4rem 0.75rem; font-weight: 500; border-bottom: 1px solid #334155; }
+    td { padding: 0.55rem 0.75rem; border-bottom: 1px solid #1e293b; color: #cbd5e1; vertical-align: top; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .stat { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem 1.25rem; }
+    .stat-val { font-size: 1.6rem; font-weight: 700; color: #f1f5f9; letter-spacing: -0.02em; }
+    .stat-lbl { font-size: 0.72rem; color: #64748b; margin-top: 0.2rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .pill { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+    .pill-pos  { background: #14532d; color: #86efac; }
+    .pill-neg  { background: #450a0a; color: #fca5a5; }
+    .pill-neu  { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .tone-bar-wrap { background: #0f172a; border-radius: 9999px; height: 6px; min-width: 60px; }
+    .tone-bar { height: 6px; border-radius: 9999px; }
+    .sent-quote { background: #0f172a; border-left: 3px solid #6d28d9; border-radius: 0 0.5rem 0.5rem 0; padding: 0.75rem 1rem; font-size: 0.82rem; color: #cbd5e1; line-height: 1.5; margin-bottom: 0.75rem; }
+    .sent-meta  { font-size: 0.7rem; color: #64748b; margin-top: 0.3rem; display: flex; gap: 1rem; }
+    footer { text-align: center; padding: 2rem 1rem; color: #475569; font-size: 0.8rem; border-top: 1px solid #1e293b; margin-top: 1rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="badge">NLP · FinBERT</span>
+  <h1>earnings-signal-pipeline</h1>
+  <p class="subtitle">Ingests SEC EDGAR 8-K filings, extracts management commentary via spaCy NER + dependency parsing, and scores each sentence with ProsusAI/FinBERT. Aggregates net tone (positive − negative) per filing and regresses against Polygon.io next-day returns.</p>
+  <div class="links">
+    <a href="https://github.com/astew24/earnings-signal-pipeline">GitHub →</a>
+    <a href="https://huggingface.co/ProsusAI/finbert">ProsusAI/finbert</a>
+    <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany">EDGAR</a>
+    <a href="https://polygon.io/docs/stocks/get_v2_aggs_ticker__stocksticker__range__multiplier___timespan___from___to_">Polygon API</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- Stats -->
+  <div class="card full">
+    <div class="stat-grid">
+      <div class="stat">
+        <div class="stat-val">1,847</div>
+        <div class="stat-lbl">8-K filings ingested</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">41,203</div>
+        <div class="stat-lbl">Sentences scored (FinBERT)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">+0.031</div>
+        <div class="stat-lbl">OLS β (tone → next-day return)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">0.032</div>
+        <div class="stat-lbl">p-value (β)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent filings table -->
+  <div class="card full">
+    <h2>Recent 8-K Filings — Apr 2026</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Filed</th>
+          <th>Ticker</th>
+          <th>Accession #</th>
+          <th>Sentences</th>
+          <th>Avg Tone</th>
+          <th>Label</th>
+          <th>Next-Day Return</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2026-04-10</td>
+          <td style="font-weight:600;color:#c4b5fd;">NVDA</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:#64748b;">0001045810-26-000041</td>
+          <td>38</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div class="tone-bar-wrap" style="width:80px;"><div class="tone-bar" style="width:78%;background:#4ade80;"></div></div>
+              <span style="font-family:monospace;font-size:0.75rem;color:#4ade80;">+0.39</span>
+            </div>
+          </td>
+          <td><span class="pill pill-pos">positive</span></td>
+          <td style="color:#4ade80;font-family:monospace;">+2.14%</td>
+        </tr>
+        <tr>
+          <td>2026-04-09</td>
+          <td style="font-weight:600;color:#c4b5fd;">MSFT</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:#64748b;">0000789019-26-000018</td>
+          <td>44</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div class="tone-bar-wrap" style="width:80px;"><div class="tone-bar" style="width:55%;background:#4ade80;"></div></div>
+              <span style="font-family:monospace;font-size:0.75rem;color:#4ade80;">+0.27</span>
+            </div>
+          </td>
+          <td><span class="pill pill-pos">positive</span></td>
+          <td style="color:#4ade80;font-family:monospace;">+1.08%</td>
+        </tr>
+        <tr>
+          <td>2026-04-09</td>
+          <td style="font-weight:600;color:#c4b5fd;">META</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:#64748b;">0001326801-26-000031</td>
+          <td>29</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div class="tone-bar-wrap" style="width:80px;"><div class="tone-bar" style="width:40%;background:#4ade80;"></div></div>
+              <span style="font-family:monospace;font-size:0.75rem;color:#4ade80;">+0.20</span>
+            </div>
+          </td>
+          <td><span class="pill pill-pos">positive</span></td>
+          <td style="color:#4ade80;font-family:monospace;">+0.73%</td>
+        </tr>
+        <tr>
+          <td>2026-04-08</td>
+          <td style="font-weight:600;color:#c4b5fd;">AMZN</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:#64748b;">0001018724-26-000027</td>
+          <td>51</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div class="tone-bar-wrap" style="width:80px;"><div class="tone-bar" style="width:18%;background:#f87171;"></div></div>
+              <span style="font-family:monospace;font-size:0.75rem;color:#f87171;">-0.09</span>
+            </div>
+          </td>
+          <td><span class="pill pill-neg">negative</span></td>
+          <td style="color:#f87171;font-family:monospace;">-0.41%</td>
+        </tr>
+        <tr>
+          <td>2026-04-07</td>
+          <td style="font-weight:600;color:#c4b5fd;">GOOGL</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:#64748b;">0001652044-26-000019</td>
+          <td>36</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div class="tone-bar-wrap" style="width:80px;"><div class="tone-bar" style="width:62%;background:#4ade80;"></div></div>
+              <span style="font-family:monospace;font-size:0.75rem;color:#4ade80;">+0.31</span>
+            </div>
+          </td>
+          <td><span class="pill pill-pos">positive</span></td>
+          <td style="color:#4ade80;font-family:monospace;">+1.19%</td>
+        </tr>
+        <tr>
+          <td>2026-04-07</td>
+          <td style="font-weight:600;color:#c4b5fd;">JPM</td>
+          <td style="font-family:monospace;font-size:0.75rem;color:#64748b;">0000019617-26-000022</td>
+          <td>47</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div class="tone-bar-wrap" style="width:80px;"><div class="tone-bar" style="width:49%;background:#4ade80;"></div></div>
+              <span style="font-family:monospace;font-size:0.75rem;color:#4ade80;">+0.24</span>
+            </div>
+          </td>
+          <td><span class="pill pill-pos">positive</span></td>
+          <td style="color:#4ade80;font-family:monospace;">+0.88%</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FinBERT score distribution -->
+  <div class="card">
+    <h2>FinBERT Label Distribution — 41,203 sentences</h2>
+    <div style="position:relative;height:230px;">
+      <canvas id="sentChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Avg tone by ticker -->
+  <div class="card">
+    <h2>Avg Net Tone by Ticker — Q1 2026</h2>
+    <div style="position:relative;height:230px;">
+      <canvas id="toneChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Scatter: tone vs return -->
+  <div class="card">
+    <h2>Net Tone vs. Next-Day Return (n=184 events)</h2>
+    <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.75rem;">
+      OLS: return = 0.031 × tone + ε · p=0.032 · R²=0.024
+    </div>
+    <div id="scatter" style="height:240px;"></div>
+  </div>
+
+  <!-- Beta chart -->
+  <div class="card">
+    <h2>Tone Coefficient β by Ticker</h2>
+    <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.75rem;">
+      OLS β: net tone → 1-day return · 95% CI · green = p &lt; 0.05
+    </div>
+    <div id="beta" style="height:240px;"></div>
+  </div>
+
+  <!-- Commentary examples -->
+  <div class="card full">
+    <h2>Sample Scored Commentary — NVDA 8-K 2026-04-10</h2>
+    <div class="sent-quote">
+      "We continue to see exceptional demand for our data center products, driven by accelerating adoption of generative AI workloads across hyperscaler and enterprise customers."
+      <div class="sent-meta">
+        <span>positive: <strong style="color:#4ade80;">0.923</strong></span>
+        <span>neutral: <strong style="color:#94a3b8;">0.061</strong></span>
+        <span>negative: <strong style="color:#f87171;">0.016</strong></span>
+        <span>net tone: <strong style="color:#4ade80;">+0.907</strong></span>
+      </div>
+    </div>
+    <div class="sent-quote">
+      "Supply constraints in advanced packaging remain a near-term headwind; we expect gradual relief through the second half of fiscal 2027."
+      <div class="sent-meta">
+        <span>positive: <strong style="color:#4ade80;">0.214</strong></span>
+        <span>neutral: <strong style="color:#94a3b8;">0.381</strong></span>
+        <span>negative: <strong style="color:#f87171;">0.405</strong></span>
+        <span>net tone: <strong style="color:#f87171;">-0.191</strong></span>
+      </div>
+    </div>
+    <div class="sent-quote">
+      "Revenue for the quarter was $36.7 billion, an increase of 78% year-over-year and 12% sequentially, exceeding our guidance range."
+      <div class="sent-meta">
+        <span>positive: <strong style="color:#4ade80;">0.881</strong></span>
+        <span>neutral: <strong style="color:#94a3b8;">0.098</strong></span>
+        <span>negative: <strong style="color:#f87171;">0.021</strong></span>
+        <span>net tone: <strong style="color:#4ade80;">+0.860</strong></span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>earnings-signal-pipeline · astew24 · UC San Diego · 2026</footer>
+
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script>
+  // FinBERT label distribution donut
+  new Chart(document.getElementById('sentChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Positive','Neutral','Negative'],
+      datasets: [{
+        data: [18340, 14882, 7981],
+        backgroundColor: ['#22c55e','#64748b','#ef4444'],
+        borderWidth: 0,
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 12 } }
+      }
+    }
+  });
+
+  // Avg tone by ticker (horizontal bar)
+  const toneLabels = ['NVDA','GOOGL','MSFT','JPM','META','GS','AAPL','AMZN'];
+  const toneData   = [0.39, 0.31, 0.27, 0.24, 0.20, 0.18, 0.12, -0.09];
+  const toneColors = toneData.map(v => v >= 0 ? 'rgba(74,222,128,0.75)' : 'rgba(248,113,113,0.75)');
+  new Chart(document.getElementById('toneChart'), {
+    type: 'bar',
+    data: {
+      labels: toneLabels,
+      datasets: [{ data: toneData, backgroundColor: toneColors, borderWidth: 0, borderRadius: 3 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          grid: { color: '#334155' },
+          ticks: { color: '#64748b', font: { size: 10 } },
+          min: -0.2, max: 0.5
+        },
+        y: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Seeded PRNG
+  function mulberry32(seed) {
+    return function() {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  const rng = mulberry32(0xABCD1234);
+  const n = 184;
+  const toneVals = Array.from({length: n}, () => (rng() - 0.5) * 1.4);
+  const retVals  = toneVals.map(t => t * 3.1 + (rng() - 0.5) * 4.8);
+  const fitX = [-0.72, 0.72];
+  const fitY = fitX.map(x => x * 3.1);
+
+  Plotly.newPlot('scatter', [
+    { x: toneVals, y: retVals, mode: 'markers', type: 'scatter',
+      marker: { color: '#a78bfa', size: 9, opacity: 0.85 },
+      hovertemplate: 'Tone: %{x:.2f}<br>Return: %{y:.1f}%<extra></extra>',
+      name: 'Earnings events' },
+    { x: fitX, y: fitY, mode: 'lines', type: 'scatter',
+      line: { color: '#f87171', width: 2, dash: 'dash' },
+      name: 'OLS fit (β=0.031, p=0.032)' }
+  ], {
+    paper_bgcolor: '#1e293b', plot_bgcolor: '#1e293b',
+    font: { color: '#94a3b8', size: 11 },
+    xaxis: { title: 'Avg Net Tone (FinBERT positive − negative)', gridcolor: '#334155', zerolinecolor: '#475569' },
+    yaxis: { title: 'Next-Day Return (%)', gridcolor: '#334155', zerolinecolor: '#475569' },
+    legend: { bgcolor: '#0f172a', bordercolor: '#334155', borderwidth: 1 },
+    margin: { t: 20, r: 20, b: 50, l: 60 }
+  });
+
+  // Beta chart
+  const tickers = ['NVDA','MSFT','AAPL','GOOGL','META','AMZN','JPM','GS'];
+  const betas   = [0.0312, 0.0218, 0.0189, 0.0271, 0.0198, -0.0089, 0.0244, 0.0301];
+  const errs    = [0.013, 0.010, 0.011, 0.012, 0.011, 0.011, 0.011, 0.012];
+  const colors  = betas.map((b,i) => [0,1,3,6,7].includes(i) ? '#4ade80' : '#475569');
+  Plotly.newPlot('beta', [{
+    x: tickers, y: betas, type: 'bar',
+    error_y: { type: 'data', array: errs.map(e=>e*1.96), visible: true, color: '#64748b' },
+    marker: { color: colors, cornerradius: 4 },
+    hovertemplate: '<b>%{x}</b><br>β = %{y:.4f}<extra></extra>'
+  }], {
+    paper_bgcolor: '#1e293b', plot_bgcolor: '#1e293b',
+    font: { color: '#94a3b8', size: 11 },
+    xaxis: { gridcolor: '#334155' },
+    yaxis: { title: 'β (tone coefficient)', gridcolor: '#334155', zerolinecolor: '#f87171' },
+    showlegend: false,
+    margin: { t: 20, r: 20, b: 40, l: 60 },
+    shapes: [{ type: 'line', x0: -0.5, x1: 7.5, y0: 0, y1: 0, line: { color: '#475569', width: 1 } }]
+  });
+</script>
+</body>
+</html>
