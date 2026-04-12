@@ -1,5 +1,7 @@
 # earnings-signal-pipeline
 
+**[Live Demo →](https://astew24.github.io/earnings-signal-pipeline/)**
+
 ## What this does
 
 `earnings-signal-pipeline` is an end-to-end **quantitative NLP pipeline** that measures whether the tone of CEO/CFO language in earnings filings predicts short-term stock price moves. It:
