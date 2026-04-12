@@ -1,0 +1,28 @@
+# earnings-signal-pipeline dependencies
+
+# HTTP & env
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# NLP — spaCy sentence segmentation + NER
+spacy>=3.7.0
+# After install, download the model:
+#   python -m spacy download en_core_web_sm
+
+# NLP — FinBERT sentiment scoring
+transformers>=4.40.0
+torch>=2.2.0
+
+# Data manipulation & statistics
+pandas>=2.2.0
+numpy>=1.26.0
+scipy>=1.13.0
+
+# Database
+psycopg2-binary>=2.9.9
+
+# Web app
+flask>=3.0.0
+
+# Visualisation
+plotly>=5.20.0
