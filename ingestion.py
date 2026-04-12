@@ -8,6 +8,9 @@ Steps:
   4. Fetch intraday 1-minute OHLCV from Polygon.io around the filing date.
   5. Persist all data to PostgreSQL via db.py.
 
+Note: SEC fair-use policy requires a descriptive User-Agent header with
+contact info. Set EDGAR_USER_AGENT in .env.
+
 Usage:
     python ingestion.py --tickers AAPL MSFT NVDA --days 90
     python ingestion.py --tickers AAPL --from-date 2024-01-01 --to-date 2024-06-30
