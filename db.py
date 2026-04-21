@@ -1,12 +1,8 @@
 """
-db.py — PostgreSQL time-series schema for the earnings signal pipeline.
-
-Tables:
-  filings         — raw 8-K filing metadata from EDGAR
-  commentary      — extracted management sentences per filing
-  tone_scores     — FinBERT sentiment scores per sentence
-  ohlcv           — intraday OHLCV bars from Polygon
-  signal_results  — OLS regression results per ticker/earnings date
+Postgres schema and helpers for the pipeline. Five tables: filings,
+commentary, tone_scores, ohlcv, signal_results. The heavy lift lives in
+get_tone_and_returns() — it joins per-filing average tone to the
+next-day open-to-close return so analysis.py can just run linregress.
 """
 
 import os

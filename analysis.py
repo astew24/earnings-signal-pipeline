@@ -1,19 +1,12 @@
 """
-analysis.py — OLS regression: tone → next-day price return.
+OLS regression of FinBERT net tone against next-day open-to-close return,
+run per ticker. Coefficients, R², and p-values are persisted to
+signal_results; a Plotly HTML report bundles per-ticker scatters with
+the beta summary bar chart.
 
-For each ticker with sufficient data:
-  Y = next-day open-to-close return
-  X = average FinBERT net tone score of 8-K filing sentences
-
-Outputs:
-  - Regression coefficients, R², p-values
-  - Persisted to signal_results table
-  - Plotly scatter charts (tone vs return) + summary bar chart
-
-Usage:
     python analysis.py                         # all tickers
-    python analysis.py --ticker AAPL           # single ticker
-    python analysis.py --output report.html    # write Plotly report
+    python analysis.py --ticker AAPL
+    python analysis.py --output report.html
 """
 
 from __future__ import annotations
@@ -35,10 +28,6 @@ except ImportError:
     HAS_DEPS = False
     print("[warn] numpy/pandas/plotly/scipy not installed — analysis disabled")
 
-
-# ---------------------------------------------------------------------------
-# OLS regression
-# ---------------------------------------------------------------------------
 
 def run_ols(ticker: Optional[str] = None, min_events: int = 5) -> list[dict]:
     """Pull tone + return data from DB and run per-ticker OLS regression.
@@ -94,10 +83,6 @@ def run_ols(ticker: Optional[str] = None, min_events: int = 5) -> list[dict]:
 
     return results
 
-
-# ---------------------------------------------------------------------------
-# Plotly report
-# ---------------------------------------------------------------------------
 
 def build_plotly_report(results: list[dict], rows: list[dict]) -> go.Figure:
     """Build a multi-panel Plotly HTML report.
@@ -205,10 +190,6 @@ def build_plotly_report(results: list[dict], rows: list[dict]) -> go.Figure:
     )
     return combined
 
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="OLS regression: tone → next-day return")

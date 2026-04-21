@@ -1,14 +1,7 @@
 """
-app.py — Flask web app serving earnings signal results with Plotly charts.
-
-Routes:
-  GET /                     — Dashboard overview
-  GET /tickers              — JSON list of tickers in DB
-  GET /results              — Signal results table (JSON)
-  GET /chart/scatter/<ticker> — Interactive scatter plot for one ticker
-  GET /chart/summary        — β coefficient summary bar chart
-  GET /api/tone/<ticker>    — JSON tone time-series for a ticker
-  POST /run/analysis        — Trigger OLS re-run (returns JSON)
+Flask app exposing the pipeline's signal results over HTTP: a dashboard
+with the OLS table, per-ticker scatter and summary Plotly charts, and a
+few JSON endpoints (tickers, results, tone series) for external callers.
 """
 
 from __future__ import annotations
@@ -37,10 +30,6 @@ try:
 except ImportError:
     HAS_PLOTLY = False
 
-
-# ---------------------------------------------------------------------------
-# HTML templates (inline for single-file portability)
-# ---------------------------------------------------------------------------
 
 _BASE_HTML = """
 <!DOCTYPE html>
@@ -98,10 +87,6 @@ _BASE_HTML = """
 """
 
 
-# ---------------------------------------------------------------------------
-# Helper: fetch signal results from DB
-# ---------------------------------------------------------------------------
-
 def _get_signal_results() -> list[dict]:
     sql = """
     SELECT ticker, period_start, period_end, n_events, beta, alpha,
@@ -136,10 +121,6 @@ def _get_tone_series(ticker: str, from_date=None, to_date=None) -> list[dict]:
             cur.execute(sql, params)
             return [dict(r) for r in cur.fetchall()]
 
-
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 
 @app.route("/")
 def dashboard():
@@ -356,10 +337,6 @@ def health():
     except Exception as e:
         return jsonify({"status": "error", "detail": str(e)}), 500
 
-
-# ---------------------------------------------------------------------------
-# Dev server
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     db.init_schema()

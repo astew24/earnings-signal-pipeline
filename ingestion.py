@@ -1,17 +1,9 @@
 """
-ingestion.py — SEC EDGAR 8-K filing ingestion + Polygon.io intraday OHLCV.
+Pull 8-K filings from EDGAR and intraday bars from Polygon, persist to Postgres.
 
-Steps:
-  1. For each ticker, resolve the CIK via EDGAR company search.
-  2. Fetch recent 8-K filings via the EDGAR full-text search API.
-  3. Download and parse the 8-K full-text to extract management commentary sections.
-  4. Fetch intraday 1-minute OHLCV from Polygon.io around the filing date.
-  5. Persist all data to PostgreSQL via db.py.
+SEC fair-use requires a descriptive User-Agent with contact info; set
+EDGAR_USER_AGENT in .env before running.
 
-Note: SEC fair-use policy requires a descriptive User-Agent header with
-contact info. Set EDGAR_USER_AGENT in .env.
-
-Usage:
     python ingestion.py --tickers AAPL MSFT NVDA --days 90
     python ingestion.py --tickers AAPL --from-date 2024-01-01 --to-date 2024-06-30
 """
@@ -38,30 +30,16 @@ EDGAR_USER_AGENT = os.getenv(
     "earnings-signal-pipeline research@example.com",
 )
 
-# SEC fair-use rate limit: 10 requests/second. We sleep 0.12s between calls to stay under.
-EDGAR_RATE_LIMIT_SLEEP = 0.12
-EDGAR_SUBMISSIONS_URL = "https://data.sec.gov/submissions/CIK{cik:010d}.json"
-EDGAR_COMPANY_SEARCH_URL = "https://efts.sec.gov/LATEST/search-index?q=%22{ticker}%22&dateRange=custom&startdt={start}&enddt={end}&forms=8-K"
-EDGAR_SEARCH_URL = "https://efts.sec.gov/LATEST/search-index"
-EDGAR_FILING_URL  = "https://www.sec.gov/Archives/edgar/full-index/{year}/{quarter}/full-index.json"
-EDGAR_FULLTEXT    = "https://efts.sec.gov/LATEST/search-index"
-
 POLYGON_AGG_URL = (
     "https://api.polygon.io/v2/aggs/ticker/{ticker}/range/1/minute/{from_date}/{to_date}"
 )
-# Polygon free tier has a 5 req/min rate limit — paid tier goes up to 100/min
-POLYGON_RATE_LIMIT_SLEEP = 0.5
 
-RATE_LIMIT_DELAY = 0.12   # SEC fair-use: ≤10 req/s
+RATE_LIMIT_DELAY = 0.12   # SEC fair-use: <= 10 req/s
 
 
 def _headers():
     return {"User-Agent": EDGAR_USER_AGENT, "Accept": "application/json"}
 
-
-# ---------------------------------------------------------------------------
-# EDGAR — CIK lookup
-# ---------------------------------------------------------------------------
 
 def get_cik(ticker: str) -> Optional[str]:
     """Resolve ticker to CIK using EDGAR company tickers JSON."""
@@ -78,10 +56,6 @@ def get_cik(ticker: str) -> Optional[str]:
     print(f"[edgar] CIK not found for {ticker}")
     return None
 
-
-# ---------------------------------------------------------------------------
-# EDGAR — 8-K filings via EDGAR full-text search
-# ---------------------------------------------------------------------------
 
 def fetch_8k_filings(
     ticker: str,
@@ -148,10 +122,6 @@ def fetch_8k_filings(
     return filings
 
 
-# ---------------------------------------------------------------------------
-# EDGAR — Full text extraction
-# ---------------------------------------------------------------------------
-
 # Patterns that identify management commentary sections in 8-K filings
 _SECTION_PATTERNS = [
     r"results of operations",
@@ -217,10 +187,6 @@ def fetch_filing_text(filing_url: str) -> Optional[str]:
     return None
 
 
-# ---------------------------------------------------------------------------
-# Polygon.io — Intraday OHLCV
-# ---------------------------------------------------------------------------
-
 def fetch_ohlcv(
     ticker: str,
     from_date: date,
@@ -270,10 +236,6 @@ def fetch_ohlcv(
         print(f"[polygon] Request error: {e}")
         return []
 
-
-# ---------------------------------------------------------------------------
-# Pipeline orchestration
-# ---------------------------------------------------------------------------
 
 def run_ingestion(
     tickers: list[str],
@@ -325,10 +287,6 @@ def run_ingestion(
 
     print("\n[ingestion] Done.")
 
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="SEC EDGAR 8-K ingestion + Polygon OHLCV")

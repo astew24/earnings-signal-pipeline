@@ -1,21 +1,14 @@
 """
-scoring.py — Extract management commentary with spaCy and score tone with FinBERT.
+Refine sentences with spaCy and score tone with FinBERT.
 
-Two-stage pipeline:
-  Stage 1 — spaCy linguistic processing
-    - Sentence boundary detection (more accurate than regex)
-    - Named entity recognition (company/product mentions)
-    - Dependency parsing for subject filtering (management voice sentences)
+spaCy re-segments the raw commentary (better sentence boundaries than
+regex, plus a cheap "is this in management voice?" filter). FinBERT
+(ProsusAI/finbert, pre-trained on the Financial PhraseBank) then scores
+each sentence; net_tone = positive - negative.
 
-  Stage 2 — FinBERT sentiment scoring
-    - ProsusAI/finbert: pre-trained on Financial PhraseBank
-    - Outputs: positive / negative / neutral probabilities
-    - Net tone = positive_score - negative_score
-
-Usage:
-    python scoring.py                         # score all unscored commentary in DB
-    python scoring.py --ticker AAPL           # score one ticker
-    python scoring.py --batch-size 64         # tune batch size for GPU
+    python scoring.py                    # score all unscored rows in DB
+    python scoring.py --ticker AAPL
+    python scoring.py --batch-size 64    # bump on GPU
 """
 
 from __future__ import annotations
@@ -38,10 +31,6 @@ DEVICE = int(os.getenv("DEVICE", "-1"))   # -1 = CPU, 0 = first GPU
 # batch sizes above 32 can OOM on CPU with finbert — 16 is a safe default
 DEFAULT_BATCH_SIZE = 16
 
-
-# ---------------------------------------------------------------------------
-# Model loading (lazy, cached)
-# ---------------------------------------------------------------------------
 
 @functools.lru_cache(maxsize=1)
 def _get_spacy():
@@ -68,10 +57,6 @@ def _get_finbert():
         truncation=True,
     )
 
-
-# ---------------------------------------------------------------------------
-# spaCy sentence extraction
-# ---------------------------------------------------------------------------
 
 def refine_sentences_spacy(raw_sentences: list[str]) -> list[str]:
     """
@@ -111,10 +96,6 @@ def _is_management_voice(span) -> bool:
     return any(kw in text_lower for kw in financial_keywords)
 
 
-# ---------------------------------------------------------------------------
-# FinBERT scoring
-# ---------------------------------------------------------------------------
-
 def score_sentences(sentences: list[str]) -> list[dict]:
     """Score sentences with FinBERT. Returns dicts with positive/negative/neutral scores.
 
@@ -135,10 +116,6 @@ def score_sentences(sentences: list[str]) -> list[dict]:
         })
     return scored
 
-
-# ---------------------------------------------------------------------------
-# DB-driven scoring pipeline
-# ---------------------------------------------------------------------------
 
 def _get_unscored_commentary(ticker: Optional[str], batch_size: int) -> list[dict]:
     """Fetch commentary rows that haven't been scored yet."""
@@ -200,10 +177,6 @@ def run_scoring(ticker: Optional[str] = None, batch_size: int = 64):
 
     return total_scored
 
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Score management commentary with FinBERT")
