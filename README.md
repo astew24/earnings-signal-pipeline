@@ -1,6 +1,6 @@
 # earnings-signal-pipeline
 
-End-to-end pipeline that asks one question: does the tone of management
+End-to-end pipeline that asks one question: does the tone of managementt
 language in 8-K filings predict the stock's next-day move?
 
 Ingest SEC 8-Ks via EDGAR full-text search, extract management
