@@ -7,16 +7,16 @@
   <meta name="description" content="Simple project page for a Python pipeline that studies SEC filing tone and short-term returns.">
   <style>
     :root {
-      --bg: #f7f8fa;
-      --paper: #ffffff;
-      --ink: #18212b;
-      --muted: #5e6a78;
-      --line: #d9e0e8;
-      --soft: #edf2f7;
-      --accent: #2d6f86;
-      --accent-2: #7a6335;
-      --code: #111820;
-      --code-text: #e7eef6;
+      --bg: oklch(97.4% 0.006 225);
+      --paper: oklch(99.5% 0.003 225);
+      --ink: oklch(19% 0.018 240);
+      --muted: oklch(47% 0.018 230);
+      --line: oklch(88% 0.014 225);
+      --soft: oklch(94% 0.010 225);
+      --accent: oklch(44% 0.10 225);
+      --accent-2: oklch(45% 0.08 70);
+      --code: oklch(16% 0.015 240);
+      --code-text: oklch(92% 0.012 225);
       --max: 1080px;
     }
 
@@ -114,7 +114,7 @@
     .button.primary {
       background: var(--ink);
       border-color: var(--ink);
-      color: #fff;
+      color: oklch(99% 0.003 225);
     }
 
     main { padding: 20px 0 62px; }
@@ -211,11 +211,12 @@
     }
 
     .note {
-      border-left: 3px solid var(--accent-2);
-      background: #f3f0e9;
+      background: var(--soft);
       color: var(--muted);
-      border-radius: 0 6px 6px 0;
-      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      font-style: italic;
     }
 
     footer {
